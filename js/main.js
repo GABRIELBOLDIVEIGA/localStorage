@@ -1,57 +1,83 @@
 const form = document.getElementById("novoItem");
 const lista = document.getElementById("lista");
-const itens = localStorage.getItem("itens") || [];
-console.log(itens)
+const itens = JSON.parse(localStorage.getItem("itens")) || [];
+
+itens.forEach((elemento) => {
+  criaElemento(elemento);
+});
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
+
   const nome = event.target.elements["nome"];
   const quantidade = event.target.elements["quantidade"];
 
-  criaElemento(nome.value, quantidade.value);
+  const existe = itens.find((elemento) => elemento.nome === nome.value);
+
+  const itemAtual = {
+    nome: nome.value,
+    quantidade: quantidade.value,
+  };
+
+  if (existe) {
+    itemAtual.id = existe.id;
+
+    atualizaElemento(itemAtual);
+
+    itens[itens.findIndex((element) => element.id === existe.id)] = itemAtual;
+  } else {
+    itemAtual.id = itens[itens.length - 1] ? itens[itens.length - 1].id + 1 : 0;
+
+    criaElemento(itemAtual);
+
+    itens.push(itemAtual);
+  }
+
+  localStorage.setItem("itens", JSON.stringify(itens));
 
   nome.value = "";
   quantidade.value = "";
-
-  // console.log(lista);
+  nome.focus();
 });
 
-lista.addEventListener("click", (event) => {
-  if (event.target.value == "delete") {
-    event.target.parentNode.remove();
-  }
-});
-
-function criaElemento(nome, quantidade) {
-  // console.log(nome, quantidade);
-
-  // `<li class="item"><strong>${quantidade}</strong>${nome}</li>`
+function criaElemento(item) {
   const novoItem = document.createElement("li");
   novoItem.classList.add("item");
 
   const numeroItem = document.createElement("strong");
-  numeroItem.innerHTML = quantidade;
-
-  const btndelete = document.createElement("button");
-  btndelete.value = "delete";
-  btndelete.innerHTML = "X";
+  numeroItem.innerHTML = item.quantidade;
+  numeroItem.dataset.id = item.id;
 
   novoItem.appendChild(numeroItem);
-  novoItem.innerHTML += nome;
+  novoItem.innerHTML += item.nome;
 
-  novoItem.appendChild(btndelete);
+  novoItem.appendChild(botaoDeleta(item.id));
 
   lista.appendChild(novoItem);
+}
 
-  // console.log(lista);
+function atualizaElemento(item) {
+  document.querySelector(`[data-id="${item.id}"]`).innerHTML = item.quantidade;
+}
 
-  const itemAtual = {
-    nome: nome,
-    quantidade: quantidade,
-  };
+function botaoDeleta(id) {
+  const btndelete = document.createElement("button");
+  btndelete.innerText = "X";
 
-  itens.push(itemAtual);
+  btndelete.addEventListener("click", function () {
+    deletaElemento(this.parentNode, id);
+  });
+
+  return btndelete;
+}
+
+function deletaElemento(tag, id) {
+  tag.remove();
+
+  itens.splice(
+    itens.findIndex((elemento) => elemento.id === id),
+    1
+  );
+
   localStorage.setItem("itens", JSON.stringify(itens));
-
-  
 }
